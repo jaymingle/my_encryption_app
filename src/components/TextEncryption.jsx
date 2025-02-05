@@ -61,6 +61,7 @@ const TextEncryption = () => {
         showToast('Text encrypted successfully!');
     };
 
+    // Replace the existing decryptText function with this one
     const decryptText = () => {
         if (!decryptInput) {
             showToast('Please enter text to decrypt', 'error');
@@ -76,34 +77,36 @@ const TextEncryption = () => {
         const detectedLevel = parseInt(match[1]);
         const textToDecrypt = match[2];
 
-        const decrypted = textToDecrypt.split('').map(char => {
-            if (!/[a-zA-Z]/.test(char)) return char;
+        try {
+            const decrypted = textToDecrypt.split('').map(char => {
+                if (!/[a-zA-Z]/.test(char)) return char;
 
-            const isUpperCase = char === char.toUpperCase();
-            const baseChar = char.toLowerCase();
-            const baseCode = baseChar.charCodeAt(0);
-            let newCode;
+                const isUpperCase = char === char.toUpperCase();
+                const baseChar = char.toLowerCase();
+                const baseCode = baseChar.charCodeAt(0);
 
-            switch (detectedLevel) {
-                case 1:
-                    newCode = ((baseCode - 97 + 1) % 26) + 97;
-                    break;
-                case 2:
-                    newCode = ((baseCode - 97 - 1 + 26) % 26) + 97;
-                    break;
-                case 3:
-                    newCode = ((baseCode - 97 - 2 + 26) % 26) + 97;
-                    break;
-                default:
-                    newCode = baseCode;
-            }
+                let shift;
+                switch (detectedLevel) {
+                    case 1: shift = 1; break;  // Reverse shift by 1
+                    case 2: shift = -1; break; // Reverse shift by -1
+                    case 3: shift = -2; break; // Reverse shift by -2
+                    default: shift = 0;
+                }
 
-            const newChar = String.fromCharCode(newCode);
-            return isUpperCase ? newChar.toUpperCase() : newChar;
-        }).join('');
+                // Ensure shift stays within alphabet bounds
+                let newCode = baseCode - 97; // Convert to 0-25 range
+                newCode = (newCode + shift + 26) % 26; // Apply shift and wrap
+                newCode += 97; // Convert back to ASCII
 
-        setDecryptedText(decrypted);
-        showToast('Text decrypted successfully!');
+                const newChar = String.fromCharCode(newCode);
+                return isUpperCase ? newChar.toUpperCase() : newChar;
+            }).join('');
+
+            setDecryptedText(decrypted);
+            showToast('Text decrypted successfully!', 'success');
+        } catch (error) {
+            showToast('Error during decryption', error);
+        }
     };
 
     const copyToClipboard = (text, type) => {
