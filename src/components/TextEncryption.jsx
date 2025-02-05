@@ -68,38 +68,37 @@ const TextEncryption = () => {
             return;
         }
 
-        const match = decryptInput.match(/^\[L([123])\](.*)/);
+        const match = decryptInput.match(/^\s*\[L([123])\](.*)/s);
         if (!match) {
             showToast('Invalid encrypted text format', 'error');
             return;
         }
 
-        const detectedLevel = parseInt(match[1]);
-        const textToDecrypt = match[2];
+        const level = parseInt(match[1]);
+        const text = match[2];
 
         try {
-            const decrypted = textToDecrypt.split('').map(char => {
-                if (!/[a-zA-Z]/.test(char)) return char;
+            const decrypted = text.split('').map(char => {
+                // Preserve all whitespace characters
+                if (!/[a-zA-Z]/.test(char)) {
+                    return char;
+                }
 
-                const isUpperCase = char === char.toUpperCase();
-                const baseChar = char.toLowerCase();
-                const baseCode = baseChar.charCodeAt(0);
+                const isUpper = char === char.toUpperCase();
+                const base = char.toLowerCase();
+                const code = base.charCodeAt(0) - 97;
 
                 let shift;
-                switch (detectedLevel) {
-                    case 1: shift = 1; break;  // Reverse shift by 1
-                    case 2: shift = -1; break; // Reverse shift by -1
-                    case 3: shift = -2; break; // Reverse shift by -2
+                switch (level) {
+                    case 1: shift = 1; break;
+                    case 2: shift = 25; break; // -1 is same as +25 in mod 26
+                    case 3: shift = 24; break; // -2 is same as +24 in mod 26
                     default: shift = 0;
                 }
 
-                // Ensure shift stays within alphabet bounds
-                let newCode = baseCode - 97; // Convert to 0-25 range
-                newCode = (newCode + shift + 26) % 26; // Apply shift and wrap
-                newCode += 97; // Convert back to ASCII
-
-                const newChar = String.fromCharCode(newCode);
-                return isUpperCase ? newChar.toUpperCase() : newChar;
+                let newCode = ((code + shift) % 26) + 97;
+                let newChar = String.fromCharCode(newCode);
+                return isUpper ? newChar.toUpperCase() : newChar;
             }).join('');
 
             setDecryptedText(decrypted);
